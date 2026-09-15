@@ -1,0 +1,435 @@
+import java.util.Locale;
+import java.util.Scanner;
+
+public class Main {
+
+    // Константы
+    static final int MAX_HP = 40;
+    static final int HEAL_AMOUNT = 8;
+    static final int XP_REWARD = 20;
+
+    public static void main(String[] args) {
+
+        Scanner scanner = new Scanner(System.in);
+
+        // =========================
+        // РЕГИСТРАЦИЯ ГЕРОЯ
+        // =========================
+
+        String heroName = "";
+
+        while (heroName.length() < 1 || heroName.length() > 30) {
+            System.out.print("Введите имя героя (1-30 символов): ");
+
+            if (scanner.hasNextLine()) {
+                heroName = scanner.nextLine().strip();
+
+                if (heroName.length() < 1 || heroName.length() > 30) {
+                    System.out.println("Ошибка: имя должно содержать от 1 до 30 символов.");
+                }
+            } else {
+                System.out.println("Ввод завершён.");
+                return;
+            }
+        }
+
+        String heroClass = "";
+
+        while (true) {
+            System.out.print("Введите класс (воин, маг, лучник): ");
+
+            if (!scanner.hasNextLine()) {
+                System.out.println("Ввод завершён.");
+                return;
+            }
+
+            heroClass = scanner.nextLine().strip().toLowerCase(Locale.ROOT);
+
+            if (heroClass.equals("воин")) {
+                break;
+            } else if (heroClass.equals("маг")) {
+                break;
+            } else if (heroClass.equals("лучник")) {
+                break;
+            } else {
+                System.out.println("Ошибка: неизвестный класс.");
+            }
+        }
+
+        int level = 0;
+
+        while (level < 1 || level > 80) {
+
+            System.out.print("Введите уровень (1-80): ");
+
+            if (!scanner.hasNextInt()) {
+                System.out.println("Ошибка: необходимо ввести целое число.");
+                scanner.nextLine();
+            } else {
+                level = scanner.nextInt();
+                scanner.nextLine();
+
+                if (level < 1 || level > 80) {
+                    System.out.println("Ошибка: уровень должен быть от 1 до 80.");
+                }
+            }
+        }
+
+        String shield = "";
+
+        while (!shield.equals("да") && !shield.equals("нет")) {
+
+            System.out.print("Есть ли щит? (да/нет): ");
+
+            if (!scanner.hasNextLine()) {
+                System.out.println("Ввод завершён.");
+                return;
+            }
+
+            shield = scanner.nextLine().strip().toLowerCase(Locale.ROOT);
+
+            if (!shield.equals("да") && !shield.equals("нет")) {
+                System.out.println("Ошибка: введите только «да» или «нет».");
+            }
+        }
+
+        boolean hasShield = false;
+
+        if (shield.equals("да")) {
+            hasShield = true;
+        } else {
+            hasShield = false;
+        }
+
+        // =========================
+        // ПРОВЕРКА ДОПУСКА
+        // =========================
+
+        boolean admitted = checkAdmission(level, hasShield, heroClass);
+
+        if (!admitted) {
+            if (level < 10) {
+                System.out.println("Отказ: недостаточный уровень.");
+            } else {
+                System.out.println("Отказ: отсутствует нужная защита.");
+            }
+
+            return;
+        }
+
+        System.out.println();
+        System.out.println("Допущен: " + heroName + ", " + heroClass);
+        System.out.println();
+
+        // =========================
+        // ВАРИАНТ А — РУИНЫ
+        // =========================
+
+        String[] enemyNames = {
+                "Крыса",
+                "Скелет",
+                "Страж"
+        };
+
+        int[] enemyStartHp = {
+                12,
+                18,
+                24
+        };
+
+        int[] enemyDamage = {
+                4,
+                6,
+                8
+        };
+
+        int heroAttack = 10;
+
+        int heroHp = MAX_HP;
+        int experience = 0;
+        int victories = 0;
+
+        boolean gameInterrupted = false;
+        boolean gameLost = false;
+
+        // =========================
+        // ТРИ БОЯ
+        // =========================
+
+        for (int i = 0; i < enemyNames.length; i++) {
+
+            int enemyHp = enemyStartHp[i];
+            boolean healUsed = false;
+
+            System.out.println("Раунд " + (i + 1));
+            System.out.println("Противник: " + enemyNames[i]);
+
+            while (enemyHp > 0 && heroHp > 0 && !gameInterrupted) {
+
+                System.out.println();
+                System.out.println("HP героя: " + heroHp);
+                System.out.println("HP противника: " + enemyHp);
+
+                System.out.println("1 — атаковать");
+                System.out.println("2 — лечиться");
+                System.out.println("0 — закончить игру");
+                System.out.print("Ваш выбор: ");
+
+                int command;
+
+                if (!scanner.hasNextInt()) {
+                    System.out.println("Ошибка: введите 1, 2 или 0.");
+                    scanner.nextLine();
+                    continue;
+                }
+
+                command = scanner.nextInt();
+                scanner.nextLine();
+
+                switch (command) {
+
+                    case 1:
+
+                        // Атака героя
+                        enemyHp = calculateDamage(enemyHp, heroAttack);
+
+                        System.out.println(
+                                "Герой атакует. HP " + enemyNames[i] +
+                                ": " + enemyHp
+                        );
+
+                        // Проверяем, умер ли противник
+                        if (enemyHp <= 0) {
+
+                            experience = experience + XP_REWARD;
+                            victories = victories + 1;
+
+                            System.out.println(
+                                    enemyNames[i] + " побеждён!"
+                            );
+
+                            System.out.println(
+                                    "Получено XP: " + XP_REWARD
+                            );
+
+                        } else {
+
+                            // Противник отвечает
+                            heroHp = calculateDamage(
+                                    heroHp,
+                                    enemyDamage[i]
+                            );
+
+                            System.out.println(
+                                    enemyNames[i] +
+                                    " атакует. HP героя: " +
+                                    heroHp
+                            );
+
+                            if (heroHp <= 0) {
+                                gameLost = true;
+                                System.out.println("Герой погиб.");
+                            }
+                        }
+
+                        break;
+
+                    case 2:
+
+                        if (healUsed) {
+
+                            System.out.println(
+                                    "Лечение уже использовано в этом бою."
+                            );
+
+                        } else {
+
+                            heroHp = calculateHeal(heroHp, HEAL_AMOUNT);
+                            healUsed = true;
+
+                            System.out.println(
+                                    "Герой восстановил здоровье."
+                            );
+
+                            System.out.println(
+                                    "HP героя: " + heroHp
+                            );
+
+                            // Живой противник отвечает
+                            if (enemyHp > 0) {
+
+                                heroHp = calculateDamage(
+                                        heroHp,
+                                        enemyDamage[i]
+                                );
+
+                                System.out.println(
+                                        enemyNames[i] +
+                                        " атакует. HP героя: " +
+                                        heroHp
+                                );
+
+                                if (heroHp <= 0) {
+                                    gameLost = true;
+                                    System.out.println("Герой погиб.");
+                                }
+                            }
+                        }
+
+                        break;
+
+                    case 0:
+
+                        gameInterrupted = true;
+
+                        System.out.println("Игра прервана.");
+
+                        break;
+
+                    default:
+
+                        System.out.println(
+                                "Неизвестная команда. " +
+                                "Состояние игры не изменилось."
+                        );
+
+                        break;
+                }
+            }
+
+            // =========================
+            // ПРОВЕРКА ИТОГОВ БОЯ
+            // =========================
+
+            if (gameInterrupted) {
+                break;
+            }
+
+            if (gameLost || heroHp <= 0) {
+                break;
+            }
+
+            if (enemyHp <= 0) {
+                System.out.println(
+                        "Раунд " + (i + 1) +
+                        ": победа, HP героя " +
+                        heroHp +
+                        ", XP " +
+                        experience
+                );
+            }
+        }
+
+        // =========================
+        // ИТОГ
+        // =========================
+
+        printResult(
+                heroName,
+                heroClass,
+                victories,
+                experience,
+                heroHp,
+                gameInterrupted,
+                gameLost
+        );
+
+        scanner.close();
+    }
+
+    // ==========================================
+    // МЕТОД 1 — ПРОВЕРКА ДОПУСКА
+    // ==========================================
+
+    static boolean checkAdmission(
+            int level,
+            boolean hasShield,
+            String heroClass
+    ) {
+
+        if (level < 10) {
+            return false;
+        }
+
+        if (hasShield) {
+            return true;
+        }
+
+        if (heroClass.equals("маг")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    // ==========================================
+    // МЕТОД 2 — РАСЧЁТ HP ПОСЛЕ УРОНА
+    // ==========================================
+
+    static int calculateDamage(int currentHp, int damage) {
+
+        int newHp = currentHp - damage;
+
+        if (newHp < 0) {
+            newHp = 0;
+        }
+
+        return newHp;
+    }
+
+    // ==========================================
+    // МЕТОД 3 — РАСЧЁТ HP ПОСЛЕ ЛЕЧЕНИЯ
+    // ==========================================
+
+    static int calculateHeal(int currentHp, int heal) {
+
+        int newHp = currentHp + heal;
+
+        if (newHp > MAX_HP) {
+            newHp = MAX_HP;
+        }
+
+        return newHp;
+    }
+
+    // ==========================================
+    // МЕТОД 4 — ИТОГ ИГРЫ
+    // ==========================================
+
+    static void printResult(
+            String heroName,
+            String heroClass,
+            int victories,
+            int experience,
+            int heroHp,
+            boolean gameInterrupted,
+            boolean gameLost
+    ) {
+
+        System.out.println();
+        System.out.println("ИТОГ ИГРЫ");
+        System.out.println("Имя: " + heroName);
+        System.out.println("Класс: " + heroClass);
+        System.out.println("Вариант: А — Руины");
+        System.out.println("Побед: " + victories);
+        System.out.println("XP: " + experience);
+        System.out.println("HP: " + heroHp);
+
+        if (gameInterrupted) {
+
+            System.out.println("Итог: Игра прервана");
+
+        } else if (gameLost) {
+
+            System.out.println("Итог: Поражение");
+
+        } else if (victories == 3) {
+
+            System.out.println("Итог: Арена пройдена");
+
+        } else {
+
+            System.out.println("Итог: Арена не пройдена");
+        }
+    }
+}
